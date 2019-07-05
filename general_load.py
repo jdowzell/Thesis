@@ -14,14 +14,15 @@ from sklearn import metrics
 from IPython.display import display
 
 %matplotlib inline
+sb.set()
 
 def goldilocks_temp(t):
     if t < 273:
-        return -1;
+        return "cold";
     elif t > 373:
-        return 1;
+        return "hot";
     else:
-        return 0
+        return "right"
 
 csv_filename = "./Data/exoplanetarchive/candidates-20190613-TIDIED.csv"
 longnames = {}
