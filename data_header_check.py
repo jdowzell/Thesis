@@ -5,6 +5,10 @@ def dataAndHeaderCheck(f, log=False):
     
     Input parameter (f) should be a path to a FITS file (local, cloud, etc)
     Input parameter (log) displays the printouts IFF set to True
+    
+    Returns:
+    1 - ALL headers are present; and
+    0 - otherwise.
     """
     
     # Flags
