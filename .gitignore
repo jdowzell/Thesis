@@ -3,3 +3,7 @@ __pycache__/
 Data/
 mastDownload/
 SIM_DATA/
+FITSLIST.txt
+FLUXLIST.txt
+IDLIST.txt
+ISPLANETLIST.txt
