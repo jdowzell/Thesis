@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 ################################
 # Scientific imports
 ###
@@ -13,12 +11,17 @@ from astroquery.mast import Catalogs
 ###
 # General imports
 ###
-import csv, math, io, os, os.path, sys, random
+import csv, math, io, os, os.path, sys, random, time, bisect
 import pandas as pd
 import seaborn as sb
+from tqdm.notebook import tqdm, trange
 import sklearn
 from sklearn import metrics
 from IPython.display import display
+
+###
+# MatPlotLib Settings
+###
 
 plt.rcParams["figure.figsize"] = (20,9)
 sb.set()
@@ -26,16 +29,6 @@ sb.set()
 ###
 # Global Variables
 ###
-# Lists
-fitsList=[]
-starlist=[]
-planetlist=[]
-eblist=[]
-beblist=[]
-
-# List Holder
-alllists = {}
-
 # Keep track of current LC and it's TIC identifier
 lastRandom={
     "number": 0,
@@ -45,8 +38,9 @@ lastRandom={
 ################################
 # Functions
 ###
-# Function for Reading which LC datafiles we have into a list
+
 def MakingAList(prnt=False):
+    # Function for Reading which LC datafiles we have into a list
     fl = []
     fitsroot = "SIM_DATA/"
     fits_directories = [x[0] for x in os.walk('./SIM_DATA/.', topdown=True)]
@@ -58,11 +52,10 @@ def MakingAList(prnt=False):
                 fl.append(fullpath)
     if prnt==True:
         print("Number of FITS files: {}".format(len(fl)))
-    #print(len(fl))
     return fl
 
 # Chooses a random number
-def GetRandomLC(n = None):
+def GetRandomLC(randict, n = None):
     global lastRandom
     #print("1: {}".format(n))
     if isinstance(n, int):
@@ -73,12 +66,12 @@ def GetRandomLC(n = None):
     else:
         n = random.randint(0,len(fitsList))
     
-    lastRandom["number"] = n
-    lastRandom["id"] = str(fitsList[n].split("-")[2].lstrip("0"))
+    randict["number"] = n
+    randict["id"] = str(fitsList[n].split("-")[2].lstrip("0"))
     return n
 
-def DrawACurve(n=None):
-    rndFile = GetRandomLC() if n == None else GetRandomLC(n)
+def DrawACurve(randict, n = None):
+    rndFile = GetRandomLC(randict) if n == None else GetRandomLC(n)
     fitsFile = fitsList[rndFile]
     
     # The following line of code gives us the header values
@@ -96,40 +89,21 @@ def DrawACurve(n=None):
 
         # Extract some of the fit parameters for the first TCE.  These are stored in the FITS header of the first
         # extension.
-        #period = hdulist[1].header['TPERIOD']
-        #duration = hdulist[1].header['TDUR']
         duration = (hdulist[1].header['LIVETIME'])
-        #epoch = hdulist[1].header['TEPOCH']
-        #depth = hdulist[1].header['TDEPTH']
 
         # Extract some of the columns of interest for the first TCE signal.  These are stored in the binary FITS table
         # in the first extension.  We'll extract the timestamps in TBJD, phase, initial fluxes, and corresponding
         # model fluxes.
-        #times = hdulist[1].data['TIME']
-        #phases = hdulist[1].data['PHASE']
-        #fluxes_init = hdulist[1].data['LC_INIT']
-        #model_fluxes_init = hdulist[1].data['MODEL_INIT']
         tess_bjds = hdulist[1].data['TIME']
         sap_fluxes = hdulist[1].data['SAP_FLUX']
         pdcsap_fluxes = hdulist[1].data['PDCSAP_FLUX']
-
-    # Define the epoch of primary transit in TBJD.  Our timestamps are also already in TBJD.
-    #t0 = 1327.520678
 
     # Start figure and axis.
     fig, ax = plt.subplots()
 
     # Plot the timeseries in black circles.
     ## Using the [1:-1] identifier to cut off the leading and trailing zeroes
-
     ax.plot(tess_bjds[1:-1], pdcsap_fluxes[1:-1], 'k.', markersize=1)
-
-    # Center the x-axis on where we expect a transit to be (time = T0), and set
-    # the x-axis range within +/- 1 day of T0.
-    ########ax.set_xlim(t0 - 1.0, t0 + 1.0)
-
-    # Overplot a red vertical line that should be where the transit occurs.
-    ########ax.axvline(x=t0, color="red")
 
     # Let's label the axes and define a title for the figure.
     fig.suptitle(CurrentLC())
@@ -138,82 +112,69 @@ def DrawACurve(n=None):
 
     # Adjust the left margin so the y-axis label shows up.
     plt.subplots_adjust(left=0.15)
-    #plt.figure(figsize=(2,8))
+    
     plt.show()
-    
-def LoadListGeneral(f):
-    lst=[]
-    try:
-        # Assuming everything CAN go well, do this
-        with open('./SIM_DATA/unpacked/{}'.format(f)) as df:
-            csvdf = csv.reader(df)
-            for lineholder in csvdf:
-                line = lineholder[0]                # I don't know why but this makes it work better
-                if line[0]!="#":                    # Ignore commented lines (lines w/ FIRST STRING ELEMENT is a # character)
-                    lst.append(line.split()[0])       # Add line to list
-                # endif
-            # endfor
-        # endwith
-    except FileNotFoundError:
-        print("FNF")
-        return
-    # end try
-    return lst
 
-def LoadList(itemtype="all"):
-    
-    pl="tsop301_planet_data.txt"
-    sl="tsop301_star_data.txt"
-    ebl="tsop301_eb_data.txt"
-    bebl="tsop301_backeb_data.txt"
-    
-    foundflag=False
-    
-    # itemtype = (S)tar, (P)lanet, (E)clipsing (B)inary, or (B)ack (E)clipsing (B)inary
-    if itemtype.lower() in ["s", "star", "all"]:
-        foundflag = True
-        global starlist
-        starlist = LoadListGeneral(sl)
-        print("Loading star list: {}".format(sl))
-    if itemtype.lower() in ["p", "planet", "all"]:
-        foundflag = True
-        global planetlist
-        planetlist = LoadListGeneral(pl)
-        print ("loading planet list: {}".format(pl))
-    if itemtype.lower() in ["eb", "eclipsing binary", "eclipsingbinary", "all"]:
-        foundflag = True
-        global eblist
-        eblist = LoadListGeneral(ebl)
-        print ("loading eb list: {}".format(ebl))
-    if itemtype.lower() in ["beb", "back eclipsing binary", "backeclipsingbinary", "all"]:
-        foundflag = True
-        global beblist
-        beblist = LoadListGeneral(bebl)
-        print ("loading beb list: {}".format(bebl))
-        
-    if foundflag:
-        global alllists
-        alllists = {"s": starlist, "p": planetlist, "eb": eblist, "beb": beblist}
-        return
-    else:
-        # If an invalid selection has been entered
-        print("You must enter either:\n"
-               "* \"S\" (or \"Star\")\n"
-               "* \"P\" (or \"Planet\")\n"
-               "* \"EB\" (or \"Eclipsing Binary\")\n"
-               "* \"BEB\" (or \"Back Eclipsing Binary\")")
+
+
+def LoadCSV(csvfile):
+    return(pd.read_csv(csvfile,comment='#',header=None,skipinitialspace=True,sep = "\s+|\t+|\s+\t+|\t+\s+", engine='python')[[0]])
+
+def ListNames():
+    mainlist={
+    'planet':"./SIM_DATA/unpacked/tsop301_planet_data.txt",
+    'star':"./SIM_DATA/unpacked/tsop301_star_data.txt",
+    'eb':"./SIM_DATA/unpacked/tsop301_eb_data.txt",
+    'beb':"./SIM_DATA/unpacked/tsop301_backeb_data.txt"
+    }
+    return(mainlist)
+
+def LoadList():
+    L=ListNames()
+    p=LoadCSV(L['planet'])
+    s=LoadCSV(L['star'])
+    eb=LoadCSV(L['eb'])
+    beb=LoadCSV(L['beb'])
+    return(p,s,eb,beb)
+
+def PlanetLookup(lst,x):
+    idx = bisect.bisect_left(lst,x)
+    return (idx<len(lst) and lst[idx] == x)
+
+def IsThisA(lst,x):
+    L=ListNames()
+    #lst = 'planet', 'star', 'eb', or 'beb'
+    # x is the objectID to search for
+    idx = bisect.bisect_left(len(L[lst]),x)
+    return (idx<len(L[lst]) and L[lst][idx] == x)
         
 def IsThisAStar(n):
-    return n in alllists["s"]
+    #return n in alllists["s"]
+    IsThisA('star',n)
     
 def IsThisAPlanet(n):
-    return n in alllists["p"]
+    #return n in alllists["p"]
+    IsThisA('planet',n)
 
 def IsThisAEB(n):
-    return n in alllists["eb"]
+    #return n in alllists["eb"]
+    IsThisA('eb',n)
 
 def IsThisABEB(n):
-    return n in alllists["beb"]
+    #return n in alllists["beb"]
+    IsThisA('beb',n)
+    
+def DFToList(*args):
+    print("Converting DataFrames to Lists")
+    lists=()
+    if len(args) > 0:
+        for i in args:
+            tmp = [x[0] for x in i.values.tolist()]
+            tmp.sort()
+            lists+=(tmp,)
+        return(lists)
+    return 0
+
 
 # Function to tell you what an item is
 def WhatIsMyLC(n):
@@ -228,34 +189,62 @@ def WhatIsMyLC(n):
 # Purely for convenience
 def CurrentLC():
     return ("File № {} - {}".format(lastRandom["number"], lastRandom["id"]))
+
+
+def MakeDataFrame(fitsList):
+    """
+    Reads a list of FITS files to examine
     
-# MAKE ME BIG DATAFRAME
-def MakeData():
+    Firstly, it reads in a list of FITS files to open and examine (param=fitsList)
+    Next, it generates three lists (id-,dat-,p-) and makes them all equal in length to the length of the fitsList.
+    It then reads the object ID (stored in the filename) and the flux timeseries, and assigns it to the two lists (params=idlist,datlist)
+    Finally, it runs the "IsThisAPlanet" function to determind if the objID is a planet, and then outputs that into the last list (param=plist)
     
-    # Initiatate Dataframe
-    df = pd.DataFrame(columns=['id', 'vals', 'isplanet'])
-    
-    # Loop for each FITS file
-    for e, li in enumerate(fitsList[:11].copy()):
-        with fits.open (li) as f:
-            #Populate 'lastRandom' so store current number and id
-            GetRandomLC(e)
+    RETURNS:
+    A thruple of all three lists
+    """
+    # Make empty lists and array
+    rng=int(len(fitsList))
+    ilist=[None]*rng
+    plist=[None]*rng
+    dataArr = np.zeros((rng,20340)) #optional = datatype
+
+    # Loop thru every FITS file
+    print("Opening Files",end='')
+    for n, file in enumerate(tqdm(fitsList[0:rng])):
+        # Print the file number (NOT ID, but the number of the file opened)
+        if(n%1000==0):
+            print("{},".format(n),end='')
+        
+        objid = np.uint32(str(fitsList[n].split("-")[2].lstrip("0")))
+        ilist[n] = objid
+        plist[n] = PlanetLookup(planetList,objid)
+        
+        # Open the file
+        with fits.open(file) as hdu:
+            # Get the PDSCAP flux data
+            flux = hdu[1].data['PDCSAP_FLUX']
+            dataArr[n] = flux
             
-            # Get number and id
-            rnum = lastRandom["number"]
-            rid = lastRandom["id"]
-            
-            #add Data
-            df = df.append(pd.DataFrame([[rid,f[1].data['PDCSAP_FLUX'][1:-1],0]], columns=['id', 'vals', 'isplanet']), ignore_index=True)
-    return(df)
+    print("\n")
+    return(ilist,dataArr,plist)
 
 ################################
 # RUN ALL INITIALISERS
 ###
 def Initialise():
-    global fitsList
+    # Set up the list of FITS files
+    print("Populating fitsList...")
     fitsList = MakingAList()
-    LoadList()
-    MakeData()
+    #WriteToFile("FITSLIST",fitsList)
+    
+    # Make the list of star/planet/eclipsingbinary/backeclipsingbinary IDs
+    print("Loading the s/p/eb/beb Lists")
+    p, s, eb, beb = LoadList()
+    return(fitsList,p,s,eb,beb)
 
-Initialise()
+def MakeData(flist):
+    # Make the lists of ID, Flux, IsPlanet
+    print("Populating the DataFrame")
+    idl, fl, pl = MakeDataFrame(flist)
+    return (idl,fl,pl)
