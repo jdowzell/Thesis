@@ -73,14 +73,14 @@ def GetPositiveRates(dataArr, checkArr, param_grid): #, ncomp=8):
     flt = FunctionTransformer(FilterMyData)
     svc = SVC(kernel='rbf', class_weight='balanced')
     
-    print(f"##############################\n{flt.get_params().keys()}\n##############################")
+    #print(f"##############################\n{flt.get_params().keys()}\n##############################")
     
     print("> GPR-MAKE-PIPELINE")
     #model = make_pipeline(nrm,flt,svc)
     #model = make_pipeline(flt,svc)
     model = Pipeline(steps=[
-         ('flt', FunctionTransformer(FilterMyData)),
          ('nrm', FunctionTransformer(NormaliseFlux)),
+         ('flt', FunctionTransformer(FilterMyData)),
          ('svc', SVC(kernel='rbf', class_weight='balanced'))
     ])
     
@@ -127,7 +127,7 @@ def GetNumDays():
 
 ################################
 
-def FilterMyData(y,cutVAR=0.1):
+def FilterMyData(y,cutVAR=0.000005):
     
     # First, let's calculate the observational time period;
     # This is done separately so that I can change this in the future for any TESS fits file
@@ -140,13 +140,19 @@ def FilterMyData(y,cutVAR=0.1):
     # Frequency Data Stuff
     sec           = numdays*24*60*60   # Number of seconds in the overall observation period
     freq          = len(y)/sec         # Frequency, in Hz, ie number of observations per second
-    cutoff        = cutVAR*freq        # HYPERPARAMETER NOW!!!!!!!! (has to be 0 < cutoff < 0.5 because of how normal cutoff works)
+    # FREQ IS APPROX 1/120 OR ~0.008333333
     
+    #cutoff        = cutVAR*freq        # HYPERPARAMETER NOW!!!!!!!! (has to be 0 < cutoff < 0.5 because of how normal cutoff works)
+    cutoff        = cutVAR
+   
     order         = 2                  # Approximation via polynomial of the order'th degree (2=quadratic, 3=cubic, 4=quartic, etc)
     
     # Butter Lowpass Filter
     nyq           = 0.5 * freq
     normal_cutoff = cutoff / nyq
+    
+    print(f"FREQ: {freq:8f}")# \t\t NORM CUTOFF: {normal_cutoff:8f}") 
+    
     b, a          = butter(order, normal_cutoff, btype='low', analog=False)
     newY          = filtfilt(b, a, y)[::10]
     
@@ -203,7 +209,7 @@ def main():
     
     print("##########\nGENERATING PARAM GRID")
     
-    param_grid = {'flt__kw_args': [{'cutVAR': np.linspace(0.05,0.45,9,True)}],
+    param_grid = {'flt__kw_args': [{'cutVAR': [0.000005, 0.00001, 0.000015, 0.00002]}],           #list(np.linspace(0.00001,0.0001,10,True))}],
                   #'flt__cutVAR': list(np.linspace(0.05,0.5,10,True)),
                   'svc__C': [0.01, 0.1, 1, 5, 10],#, 50],
                   'svc__gamma': [0.000001, 0.00001, 0.0001, 0.0005, 0.001]}#, 0.005]}
