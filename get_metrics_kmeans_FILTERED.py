@@ -34,6 +34,7 @@ from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.cluster import SpectralClustering
+from sklearn.cluster import KMeans
 
 from sklearn.preprocessing import FunctionTransformer
 
@@ -87,7 +88,7 @@ def GetPositiveRates(dataArr, checkArr, param_grid): #, ncomp=8):
 #         ('nth', FunctionTransformer(Every_Nth_Value)),
 #         ('svc', SVC(kernel='rbf', class_weight='balanced'))
 #    ])
-    model = SVC(kernel='rbf', class_weight='balanced')
+    model = KMeans(n_clusters=2, random_state=42, init='k-means++', max_iter=5000, n_init=50)
     
     print("> GPR-TEST_TRAIN_SPLIT")
     # Sort data into Test and Train
@@ -118,72 +119,13 @@ def GetPositiveRates(dataArr, checkArr, param_grid): #, ncomp=8):
     return (mat, moreStats)
 
 ################################
-
-def Every_Nth_Value(y, n=10):
-    return (y[::n])
-
-################################
-
-def GetNumDays():
-    
-    nDays = xTime[-1]-xTime[0]
-    
-    return (nDays)
-
-################################
-
-def FilterMyData(y,cutVAR=0.000005):
-    
-    # First, let's calculate the observational time period;
-    # This is done separately so that I can change this in the future for any TESS fits file
-    numdays       = GetNumDays()
-    
-    # Next, fix data                           
-    yMedian       = np.median(y)                                                    # Get the median value of 'y' before changing it
-    y             = [yMedian if n in xNaNs else item for n,item in enumerate(y)]    # Change all the missing values to the median value of the whole array
-    
-    # Frequency Data Stuff
-    sec           = numdays*24*60*60   # Number of seconds in the overall observation period
-    freq          = len(y)/sec         # Frequency, in Hz, ie number of observations per second
-    # FREQ IS APPROX 1/120 OR ~0.008333333
-    
-    #cutoff        = cutVAR*freq        # HYPERPARAMETER NOW!!!!!!!! (has to be 0 < cutoff < 0.5 because of how normal cutoff works)
-    cutoff        = cutVAR
-   
-    order         = 2                  # Approximation via polynomial of the order'th degree (2=quadratic, 3=cubic, 4=quartic, etc)
-    
-    # Butter Lowpass Filter
-    nyq           = 0.5 * freq
-    normal_cutoff = cutoff / nyq
-    
-    #print(f"FREQ: {freq:8f}")# \t\t NORM CUTOFF: {normal_cutoff:8f}") 
-    
-    b, a          = butter(order, normal_cutoff, btype='low', analog=False)
-    newY          = filtfilt(b, a, y)
-    
-    # Finally, return the new X and Y values
-    return (newY)
-
-################################
-
-def NormaliseFlux(f):
-    
-    # Normalise the Flux (y co-ords)
-    mean = np.median(f)
-    std=np.std(f)
-    f[:] = [(number/mean) for number in f]
-    
-    # Return nornalised flux
-    return (f)
-
-################################
 # main
 ################################
 
 def main():
     
     # Initial setups; to allow for future master-file-ification later on
-    targetname = 'SVM'
+    targetname = 'KMeans'
     # Later on will be taken from a cmd line arg / a cmd line option (" > get_metrics.py --fourier true --algorithm SVM --nth_record 10")
     
     print("##########\nTIME START")
@@ -196,7 +138,8 @@ def main():
     #fluxarrFULL     = np.load("fluxlist.npy")
     fluxarrFULL     = np.load("filteredfluxlistONEORNONE.npy")
     #isplanetarrFULL = ["Planet" if x==True else "Not Planet" for x in np.load("isplanetlist.npy")]
-    isplanetarrFULL = ["Planet" if x==1 else "Not Planet" for x in np.load("one_or_none_isplanetlist.npy")]
+    #isplanetarrFULL = ["Planet" if x==1 else "Not Planet" for x in np.load("one_or_none_isplanetlist.npy")]
+    isplanetarrFULL = np.load("one_or_none_isplanetlist.npy")
     
     print("##########\nUSING EVERY NTH RECORD")
     
@@ -216,13 +159,7 @@ def main():
     
     print("##########\nGENERATING PARAM GRID")
     
-    param_grid = {#'nth__kw_args': [{'n': [1]}],           #list(np.linspace(0.00001,0.0001,10,True))}],
-                  'C': [0.01, 0.1, 1, 5, 10],#, 50],
-                  'gamma': [0.000001, 0.00001, 0.0001, 0.0005, 0.001]}#, 0.005]}
-    
-#    print("##########\nRUNNING TIDYMYDATA")
-#    
-#    fluxarrTIDY = TidyMyData(fluxarr)
+    param_grid = {'algorithm': ['auto', 'full', 'elkan']}
     
     print("##########\nRUNNING GETPOSITIVERATES")
     
@@ -240,6 +177,11 @@ def main():
     
     print("##########\nGATHERING STATS AND WRITING FILE")
     
+    # Reliability Metrics
+    mAcc = accuracy_score(y_test, y_pred)
+    mPre = precision_score(y_test, y_pred)
+    mRec = recall_score(y_test, y_pred)
+    
     # Preparing the stats text
     data = {}
     data[targetname] = []
@@ -251,6 +193,9 @@ def main():
         'FP' : FP,
         'FN' : FN,
         'TP' : TP,
+        'Accuracy': mAcc,
+        'Precision': mPre,
+        'Recall': mRec,
         'dateran': tStart.replace(microsecond=0),
         'CV' : moreStats
     })

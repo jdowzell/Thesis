@@ -3,10 +3,16 @@
 ################################
 # Scientific imports
 ################################
+import gc
 import matplotlib.pyplot as plt
 import numpy as np
 from datetime import datetime
 from astropy.io import fits
+from astroquery.mast import Observations
+from astroquery.mast import Catalogs
+from astropy import units as u
+from astropy.timeseries import BoxLeastSquares
+from astropy.timeseries import TimeSeries
 
 ################################
 # General imports
@@ -19,23 +25,23 @@ from tqdm.notebook import tqdm, trange
 ################################
 # SciKitLearn Imports
 ################################
-
-from scipy.signal import butter,filtfilt
-
 import sklearn
 from sklearn import metrics
 from sklearn.svm import SVC
-from sklearn.pipeline import Pipeline
+from sklearn.decomposition import PCA
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import confusion_matrix
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.linear_model import LinearRegression
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.cluster import SpectralClustering
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import BaggingClassifier
+from sklearn.ensemble import RandomForestClassifier
 
-from sklearn.preprocessing import FunctionTransformer
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+
+from scipy.signal import butter,filtfilt
 
 from IPython.display import display
 
@@ -69,33 +75,19 @@ def GetPositiveRates(dataArr, checkArr, param_grid): #, ncomp=8):
     
     # Make a PCA Pipeline
     print("> GPR-START")
-    
-    print("> GPR-TRANSFORMERS")
-    #nrm = FunctionTransformer(NormaliseFlux)
-    #flt = FunctionTransformer(FilterMyData)
-    #nth = FunctionTransformer(Every_Nth_Value)
+    #pca = PCA(svd_solver='randomized', n_components=ncomp, whiten=True, random_state=42) # Number of components is something to be discussed
     #svc = SVC(kernel='rbf', class_weight='balanced')
+    #model = make_pipeline(pca, svc)
     
-    #print(f"##############################\n{flt.get_params().keys()}\n##############################")
+    #model = SVC(kernel='rbf', class_weight='balanced')
+    model = RandomForestClassifier(n_estimators=100)
     
-    print("> GPR-MAKE-PIPELINE")
-    #model = make_pipeline(nrm,flt,svc)
-    #model = make_pipeline(flt,svc)
-#    model = Pipeline(steps=[
-#         ('nrm', FunctionTransformer(NormaliseFlux)),
-#         ('flt', FunctionTransformer(FilterMyData)),
-#         ('nth', FunctionTransformer(Every_Nth_Value)),
-#         ('svc', SVC(kernel='rbf', class_weight='balanced'))
-#    ])
-    model = SVC(kernel='rbf', class_weight='balanced')
-    
-    print("> GPR-TEST_TRAIN_SPLIT")
     # Sort data into Test and Train
     Xtrain, Xtest, ytrain, ytest = train_test_split(dataArr, checkArr, random_state=42)
     
     # Do gridsearch for svc params
     print("> GPR-GRIDSEARCH")
-    grid = GridSearchCV(model, param_grid, n_jobs=10)
+    grid = GridSearchCV(model, param_grid)
     
     # Fit model
     print("> GPR-FIT")
@@ -183,8 +175,8 @@ def NormaliseFlux(f):
 def main():
     
     # Initial setups; to allow for future master-file-ification later on
-    targetname = 'SVM'
-    # Later on will be taken from a cmd line arg / a cmd line option (" > get_metrics.py --fourier true --algorithm SVM --nth_record 10")
+    targetname = 'RandomTree'
+    # Later on will be taken from a command line argument, or even an option (" > get_metrics.py --fourier true --algorithm SVM --nth_record 10")
     
     print("##########\nTIME START")
     tStart = datetime.now()
@@ -193,10 +185,8 @@ def main():
     print("##########\nLOADING FILES")
 
     # Load the Data files
-    #fluxarrFULL     = np.load("fluxlist.npy")
-    fluxarrFULL     = np.load("filteredfluxlistONEORNONE.npy")
-    #isplanetarrFULL = ["Planet" if x==True else "Not Planet" for x in np.load("isplanetlist.npy")]
-    isplanetarrFULL = ["Planet" if x==1 else "Not Planet" for x in np.load("one_or_none_isplanetlist.npy")]
+    fluxarrFULL     = np.load("None_Or_One_Exoplanet_FILT_NORM_SUBS.npy")
+    isplanetarrFULL = np.load("one_or_none_isplanetlist.npy")
     
     print("##########\nUSING EVERY NTH RECORD")
     
@@ -216,17 +206,11 @@ def main():
     
     print("##########\nGENERATING PARAM GRID")
     
-    param_grid = {#'nth__kw_args': [{'n': [1]}],           #list(np.linspace(0.00001,0.0001,10,True))}],
-                  'C': [0.01, 0.1, 1, 5, 10],#, 50],
-                  'gamma': [0.000001, 0.00001, 0.0001, 0.0005, 0.001]}#, 0.005]}
-    
-#    print("##########\nRUNNING TIDYMYDATA")
-#    
-#    fluxarrTIDY = TidyMyData(fluxarr)
+    param_grid = {'n_estimators': [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000]}
     
     print("##########\nRUNNING GETPOSITIVERATES")
     
-    confMat, moreStats = GetPositiveRates(fluxarr, isplanetarr, param_grid)
+    confMat, moreStats = GetPositiveRates(fluxarr, isplanetarr, param_grid) #, ncomp=pca_n_components)
     (TN, FN), (FP, TP) = confMat.T
     
     print("##########\nTIME FINISH")

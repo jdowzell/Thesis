@@ -1,0 +1,82 @@
+{
+    "CanonicalIntervalForest": [
+        {
+            "dateran": "2022-03-08 01:17:30",
+            "tstart": "2022-03-08 01:17:30.611911",
+            "tfinish": "2022-04-13 22:07:15.305979",
+            "tdelta": "36 days, 20:49:44.694068",
+            "TN": "1746",
+            "FP": "0",
+            "FN": "521",
+            "TP": "22",
+            "Accuracy": 0.7723896898208825,
+            "Precision": 1.0,
+            "Recall": 0.040515653775322284,
+            "CV": {
+                "mean_fit_time": "[  7943.0092237   29724.54257731  36883.38301744  45020.3080368\n 119991.57723188   5663.10991588  21725.06275525  26520.5993928\n  33944.51793242  84518.68899155]",
+                "std_fit_time": "[ 144.74587549  886.5738437   781.40575989 1154.38206395 1800.64474419\n  578.8265379   356.13331214  584.2942977  5502.44020467 4227.52966221]",
+                "mean_score_time": "[  181.6710721    175.10350065   173.52497821   175.20454335\n   183.15833545  1378.73223844  5354.92910366  6468.79110708\n  8406.16001921 20257.400352  ]",
+                "std_score_time": "[4.99517760e+00 2.72457533e+00 1.35488269e+00 4.89594743e-01\n 8.24956413e+00 1.50913332e+02 1.15541068e+02 1.45495198e+02\n 1.34899132e+03 4.74656046e+02]",
+                "param_canonicalintervalforest__base_estimator": "['CIT' 'CIT' 'CIT' 'CIT' 'CIT' 'DTC' 'DTC' 'DTC' 'DTC' 'DTC']",
+                "param_canonicalintervalforest__n_estimators": "[50 200 250 300 800 50 200 250 300 800]",
+                "params": [
+                    {
+                        "canonicalintervalforest__base_estimator": "CIT",
+                        "canonicalintervalforest__n_estimators": 50
+                    },
+                    {
+                        "canonicalintervalforest__base_estimator": "CIT",
+                        "canonicalintervalforest__n_estimators": 200
+                    },
+                    {
+                        "canonicalintervalforest__base_estimator": "CIT",
+                        "canonicalintervalforest__n_estimators": 250
+                    },
+                    {
+                        "canonicalintervalforest__base_estimator": "CIT",
+                        "canonicalintervalforest__n_estimators": 300
+                    },
+                    {
+                        "canonicalintervalforest__base_estimator": "CIT",
+                        "canonicalintervalforest__n_estimators": 800
+                    },
+                    {
+                        "canonicalintervalforest__base_estimator": "DTC",
+                        "canonicalintervalforest__n_estimators": 50
+                    },
+                    {
+                        "canonicalintervalforest__base_estimator": "DTC",
+                        "canonicalintervalforest__n_estimators": 200
+                    },
+                    {
+                        "canonicalintervalforest__base_estimator": "DTC",
+                        "canonicalintervalforest__n_estimators": 250
+                    },
+                    {
+                        "canonicalintervalforest__base_estimator": "DTC",
+                        "canonicalintervalforest__n_estimators": 300
+                    },
+                    {
+                        "canonicalintervalforest__base_estimator": "DTC",
+                        "canonicalintervalforest__n_estimators": 800
+                    }
+                ],
+                "split0_test_score": "[       nan        nan        nan        nan        nan 0.78878369\n 0.79096868 0.79024035 0.79096868 0.78951202]",
+                "split1_test_score": "[       nan        nan        nan        nan        nan 0.79752367\n 0.79679534 0.79898034 0.79752367 0.798252  ]",
+                "split2_test_score": "[       nan        nan        nan        nan        nan 0.79024035\n 0.79169701 0.79315368 0.79024035 0.79096868]",
+                "split3_test_score": "[       nan        nan        nan        nan        nan 0.78878369\n 0.78951202 0.78587036 0.78805535 0.78732702]",
+                "split4_test_score": "[       nan        nan        nan        nan        nan 0.77130371\n 0.77421704 0.77276038 0.77421704 0.77348871]",
+                "mean_test_score": "[       nan        nan        nan        nan        nan 0.78732702\n 0.78863802 0.78820102 0.78820102 0.78790969]",
+                "std_test_score": "[       nan        nan        nan        nan        nan 0.00864233\n 0.00761656 0.00881733 0.00767207 0.00808941]",
+                "rank_test_score": "[ 6  7  8  9 10  5  1  2  2  4]",
+                "split0_train_score": "[nan nan nan nan nan  1.  1.  1.  1.  1.]",
+                "split1_train_score": "[nan nan nan nan nan  1.  1.  1.  1.  1.]",
+                "split2_train_score": "[nan nan nan nan nan  1.  1.  1.  1.  1.]",
+                "split3_train_score": "[nan nan nan nan nan  1.  1.  1.  1.  1.]",
+                "split4_train_score": "[nan nan nan nan nan  1.  1.  1.  1.  1.]",
+                "mean_train_score": "[nan nan nan nan nan  1.  1.  1.  1.  1.]",
+                "std_train_score": "[nan nan nan nan nan  0.  0.  0.  0.  0.]"
+            }
+        }
+    ]
+}
