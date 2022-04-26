@@ -224,7 +224,7 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     # Make a PCA Pipeline
     print("> START")
     
-    algorithm = ContractableBOSS(n_jobs=8)
+    algorithm = ContractableBOSS(n_jobs=-1)
     print(f"\t> Model: {algorithm}")
     
     # Make the transformers
@@ -255,7 +255,7 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     
     # Do gridsearch for svc params
     print("> GRIDSEARCH")
-    grid = GridSearchCV(algorithm, param_grid, return_train_score=True, n_jobs=8)
+    grid = GridSearchCV(algorithm, param_grid, return_train_score=True, n_jobs=-1, verbose=10)
     
     # Fit model
     print("> FIT")
@@ -280,8 +280,8 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     print("> CONFUSION")
     mat = confusion_matrix(y_test, y_pred)
     
-    print(f"Y_TEST = {y_test}\n"
-          f"Y_PRED = {y_pred}")
+    #print(f"Y_TEST = {y_test}\n"
+    #      f"Y_PRED = {y_pred}")
     
     return (mat, moreStats, mAcc, mPre, mRec)
 
@@ -332,8 +332,8 @@ def main():
     masterY = np.load("True_NOO_isplanetlist.npy")
     
     # TESTING PURPOSES ONLY
-    masterX = masterX[::30]
-    masterY = masterY[::30]
+    #masterX = masterX[::30]
+    #masterY = masterY[::30]
     
     print(f"Length of x-arr: {len(masterX)}\nLength of y-arr: {len(masterY)}")
     
@@ -344,7 +344,7 @@ def main():
     param_grid = {
         'n_parameter_samples': [50, 200, 250, 300, 800],
         'max_ensemble_size': [10, 45, 50, 55, 100]
-    },
+    }
     
 
     ############################

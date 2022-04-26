@@ -80,7 +80,7 @@ from sktime.datatypes._panel._convert import from_2d_array_to_nested, from_neste
 from sktime.forecasting.compose import TransformedTargetForecaster
 from sktime.forecasting.model_selection import ForecastingGridSearchCV
 
-from sktime.classification.interval_based import CanonicalIntervalForest
+from sktime.classification.kernel_based import Arsenal
 
 ################################
 # Suppress Warnings
@@ -224,7 +224,7 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     # Make a PCA Pipeline
     print("> START")
     
-    algorithm = CanonicalIntervalForest(n_jobs=8)
+    algorithm = Arsenal(n_jobs=-1)
     print(f"\t> Model: {algorithm}")
     
     # Make the transformers
@@ -264,6 +264,8 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     # Use svc params and predict
     print("> MAKESTATS")
     moreStats = grid.cv_results_
+    #print("> > Best parameter (CV score=%0.3f):" % grid.best_score_)
+    #print("> > {}".format(grid.best_params_))
     
     # Use svc params and predict
     print("> PREDICT")
@@ -275,6 +277,7 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     mAcc = accuracy_score(y_test, y_pred)
     mPre = precision_score(y_test, y_pred)
     mRec = recall_score(y_test, y_pred)
+    #metrics = (mAcc, mPre, mRec)
     
     # Now that model has done, time for confusion matrix shenanigans
     print("> CONFUSION")
@@ -316,8 +319,7 @@ def WriteJSON(targetname, tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, s
     with open(targetdest+fname, "w") as f:
         #f.write(stats)
         json.dump(data, f, indent=4, default=str)
-
-################################
+        
 ################################
 ################################
 # main
@@ -332,8 +334,8 @@ def main():
     masterY = np.load("True_NOO_isplanetlist.npy")
     
     # TESTING PURPOSES ONLY
-    #masterX = masterX[::10]
-    #masterY = masterY[::10]
+    #masterX = masterX[::30]
+    #masterY = masterY[::30]
     
     print(f"Length of x-arr: {len(masterX)}\nLength of y-arr: {len(masterY)}")
     
@@ -342,11 +344,11 @@ def main():
     ############################
     
     param_grid = {
-        'n_estimators': [10, 150, 200, 250, 500, 800], 
-        'base_estimator': ['DTC']
+        'num_kernels': [1000, 1500, 2000, 2500, 3000],
+        'n_estimators': [15, 20, 25, 30, 35]
     }
-
     
+
     ############################
     # Loop Start
     ############################
@@ -367,7 +369,7 @@ def main():
     tDelta = tFin - tStart
     mins = (math.floor(tDelta.seconds/60))
     
-    WriteJSON("sktime-CIF", tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, moreStats)
+    WriteJSON("sktime-Arsenal", tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, moreStats)
 
 ################################
 # EXECUTE ORDER 66

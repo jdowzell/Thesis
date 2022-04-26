@@ -80,7 +80,7 @@ from sktime.datatypes._panel._convert import from_2d_array_to_nested, from_neste
 from sktime.forecasting.compose import TransformedTargetForecaster
 from sktime.forecasting.model_selection import ForecastingGridSearchCV
 
-from sktime.classification.interval_based import CanonicalIntervalForest
+from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
 
 ################################
 # Suppress Warnings
@@ -224,7 +224,7 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     # Make a PCA Pipeline
     print("> START")
     
-    algorithm = CanonicalIntervalForest(n_jobs=8)
+    algorithm = KNeighborsTimeSeriesClassifier(n_jobs=-1)
     print(f"\t> Model: {algorithm}")
     
     # Make the transformers
@@ -342,10 +342,8 @@ def main():
     ############################
     
     param_grid = {
-        'n_estimators': [10, 150, 200, 250, 500, 800], 
-        'base_estimator': ['DTC']
+        'distance': ['dtw','ddtw', 'wdtw','lcss','erp','msm','twe']
     }
-
     
     ############################
     # Loop Start
@@ -367,7 +365,7 @@ def main():
     tDelta = tFin - tStart
     mins = (math.floor(tDelta.seconds/60))
     
-    WriteJSON("sktime-CIF", tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, moreStats)
+    WriteJSON("sktime-KNTS", tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, moreStats)
 
 ################################
 # EXECUTE ORDER 66

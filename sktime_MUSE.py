@@ -80,7 +80,7 @@ from sktime.datatypes._panel._convert import from_2d_array_to_nested, from_neste
 from sktime.forecasting.compose import TransformedTargetForecaster
 from sktime.forecasting.model_selection import ForecastingGridSearchCV
 
-from sktime.classification.interval_based import CanonicalIntervalForest
+from sktime.classification.dictionary_based import MUSE
 
 ################################
 # Suppress Warnings
@@ -224,7 +224,7 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     # Make a PCA Pipeline
     print("> START")
     
-    algorithm = CanonicalIntervalForest(n_jobs=8)
+    algorithm = MUSE(n_jobs=-1)
     print(f"\t> Model: {algorithm}")
     
     # Make the transformers
@@ -264,6 +264,8 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     # Use svc params and predict
     print("> MAKESTATS")
     moreStats = grid.cv_results_
+    #print("> > Best parameter (CV score=%0.3f):" % grid.best_score_)
+    #print("> > {}".format(grid.best_params_))
     
     # Use svc params and predict
     print("> PREDICT")
@@ -275,6 +277,7 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     mAcc = accuracy_score(y_test, y_pred)
     mPre = precision_score(y_test, y_pred)
     mRec = recall_score(y_test, y_pred)
+    #metrics = (mAcc, mPre, mRec)
     
     # Now that model has done, time for confusion matrix shenanigans
     print("> CONFUSION")
@@ -316,8 +319,7 @@ def WriteJSON(targetname, tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, s
     with open(targetdest+fname, "w") as f:
         #f.write(stats)
         json.dump(data, f, indent=4, default=str)
-
-################################
+        
 ################################
 ################################
 # main
@@ -332,8 +334,8 @@ def main():
     masterY = np.load("True_NOO_isplanetlist.npy")
     
     # TESTING PURPOSES ONLY
-    #masterX = masterX[::10]
-    #masterY = masterY[::10]
+    #masterX = masterX[::30]
+    #masterY = masterY[::30]
     
     print(f"Length of x-arr: {len(masterX)}\nLength of y-arr: {len(masterY)}")
     
@@ -342,17 +344,17 @@ def main():
     ############################
     
     param_grid = {
-        'n_estimators': [10, 150, 200, 250, 500, 800], 
-        'base_estimator': ['DTC']
+        'anova': [True, False],
+        'window_inc': [2, 3, 4, 5, 6]        
     }
-
     
+
     ############################
     # Loop Start
     ############################
     
+    print("Staring Loops!\n####################\n")
     tStart = datetime.now()
-    print(f"Staring Loops!\n####################\nStart Time: {tStart}\n####################\n")
     
     #Parallel(n_jobs=-1)(delayed(DoTheStuff)(classifier, param_grid, masterX, masterY) for classifier in list_of_classifiers)
     confMat, moreStats, acc, pre, rec = GetMetrics(masterX, masterY, param_grid)
@@ -361,13 +363,10 @@ def main():
     
     # End Timer and get time stats
     tFin = datetime.now()
-    
-    print(f"\n####################\nFinish Time: {tFin}\n####################\n")
-    
     tDelta = tFin - tStart
     mins = (math.floor(tDelta.seconds/60))
     
-    WriteJSON("sktime-CIF", tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, moreStats)
+    WriteJSON("sktime-MUSE", tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, moreStats)
 
 ################################
 # EXECUTE ORDER 66

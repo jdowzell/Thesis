@@ -80,22 +80,8 @@ from sktime.datatypes._panel._convert import from_2d_array_to_nested, from_neste
 from sktime.forecasting.compose import TransformedTargetForecaster
 from sktime.forecasting.model_selection import ForecastingGridSearchCV
 
-from sktime.classification.kernel_based import Arsenal
-from sktime.classification.interval_based import CanonicalIntervalForest
-from sktime.classification.dictionary_based import ContractableBOSS
-from sktime.classification.interval_based import DrCIF
-from sktime.classification.hybrid import HIVECOTEV1
-from sktime.classification.dictionary_based import IndividualBOSS
-from sktime.classification.dictionary_based import IndividualTDE
-from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
-#from sktime.classification.feature_based import MatrixProfileClassifier
-from sktime.classification.dictionary_based import MUSE
-from sktime.classification.interval_based import RandomIntervalSpectralForest
-#from sktime.classification.distance_based import ShapeDTW
+
 from sktime.classification.feature_based import SignatureClassifier
-from sktime.classification.interval_based import SupervisedTimeSeriesForest
-#from sktime.classification.feature_based import TSFreshClassifier
-from sktime.classification.dictionary_based import WEASEL
 
 ################################
 # Suppress Warnings

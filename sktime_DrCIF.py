@@ -224,7 +224,7 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     # Make a PCA Pipeline
     print("> START")
     
-    algorithm = DrCIF(n_jobs=8)
+    algorithm = DrCIF(n_jobs=-1)
     print(f"\t> Model: {algorithm}")
     
     # Make the transformers
@@ -237,18 +237,25 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     
     # Construct the Pipeline
     print("> MAKE PIPELINE")
-    #model = make_pipeline(flt,nth,algorithm)
-    pipe = Pipeline(steps=[['fixnan',fnan],['normalise',norm],['filter',filt],['everynth',enth],['makenested', mnst],['drcif', DrCIF(n_jobs=-1)]])
-    #print(pipe)
+    pipe = Pipeline(steps=[['fixnan',fnan],['normalise',norm],['filter',filt]], verbose=True) #,['everynth',enth],['nb', algorithm]])
+    
+    print("> INITIAL TRANSFORMATION")
+    pipe.transform(X_arr)
+    
+    print("> PERFORM SUBSAMPLING")
+    X_arr = enth.transform(X_arr)
+    
+    print("> MAKE NESTED")
+    X_nested = mnst.transform(X_arr)
     
     # Perform data manipulation
     print("> TEST-TRAIN-SPLIT")
     #nestedX = MakeNested(X_arr)
-    X_train, X_test, y_train, y_test = train_test_split(X_arr, Y_arr, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X_nested, Y_arr, random_state=42)
     
     # Do gridsearch for svc params
     print("> GRIDSEARCH")
-    grid = GridSearchCV(pipe, param_grid, return_train_score=True, n_jobs=-1)
+    grid = GridSearchCV(algorithm, param_grid, return_train_score=True, n_jobs=-1)
     
     # Fit model
     print("> FIT")
@@ -304,7 +311,7 @@ def WriteJSON(targetname, tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, s
 
     # File saving stuff
     fname = targetname+".json"
-    targetdest = "./sktime_results/"
+    targetdest = "./NEW_RESULTS/"
 
     print("Saving {}".format(fname))
 
@@ -333,21 +340,12 @@ def main():
     print(f"Length of x-arr: {len(masterX)}\nLength of y-arr: {len(masterY)}")
 
     ############################
-    # Classifier List Setup
-    ############################
-    
-    list_of_classifiers = [
-        DrCIF
-    ]
-    
-    ############################
     # Parameter Grid Setup
     ############################
     
     param_grid = {
-        'drcif__n_estimators': [10, 150, 200, 250, 800],
-        #'drcif__n_estimators': [10, 20],
-        'drcif__base_estimator': ['CIT', 'DTC']
+        'n_estimators': [10, 150, 200, 250, 500, 800],
+        'base_estimator': ['DTC']
     }
     
 
@@ -368,7 +366,7 @@ def main():
     tDelta = tFin - tStart
     mins = (math.floor(tDelta.seconds/60))
     
-    WriteJSON("DrCIF", tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, moreStats)
+    WriteJSON("sktime-DrCIF", tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, moreStats)
 
 ################################
 # EXECUTE ORDER 66

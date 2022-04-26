@@ -80,7 +80,19 @@ from sktime.datatypes._panel._convert import from_2d_array_to_nested, from_neste
 from sktime.forecasting.compose import TransformedTargetForecaster
 from sktime.forecasting.model_selection import ForecastingGridSearchCV
 
-from sktime.classification.interval_based import CanonicalIntervalForest
+#from sktime.classification.kernel_based import Arsenal
+#from sktime.classification.interval_based import CanonicalIntervalForest
+#from sktime.classification.dictionary_based import ContractableBOSS
+#from sktime.classification.interval_based import DrCIF
+#from sktime.classification.hybrid import HIVECOTEV1
+from sktime.classification.dictionary_based import IndividualBOSS
+#from sktime.classification.dictionary_based import IndividualTDE
+#from sktime.classification.distance_based import KNeighborsTimeSeriesClassifier
+#from sktime.classification.dictionary_based import MUSE
+#from sktime.classification.interval_based import RandomIntervalSpectralForest
+#from sktime.classification.feature_based import SignatureClassifier
+#from sktime.classification.interval_based import SupervisedTimeSeriesForest
+#from sktime.classification.dictionary_based import WEASEL
 
 ################################
 # Suppress Warnings
@@ -224,7 +236,7 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     # Make a PCA Pipeline
     print("> START")
     
-    algorithm = CanonicalIntervalForest(n_jobs=8)
+    algorithm = IndividualBOSS(n_jobs=-1)
     print(f"\t> Model: {algorithm}")
     
     # Make the transformers
@@ -264,6 +276,8 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     # Use svc params and predict
     print("> MAKESTATS")
     moreStats = grid.cv_results_
+    #print("> > Best parameter (CV score=%0.3f):" % grid.best_score_)
+    #print("> > {}".format(grid.best_params_))
     
     # Use svc params and predict
     print("> PREDICT")
@@ -275,6 +289,7 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     mAcc = accuracy_score(y_test, y_pred)
     mPre = precision_score(y_test, y_pred)
     mRec = recall_score(y_test, y_pred)
+    #metrics = (mAcc, mPre, mRec)
     
     # Now that model has done, time for confusion matrix shenanigans
     print("> CONFUSION")
@@ -316,8 +331,7 @@ def WriteJSON(targetname, tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, s
     with open(targetdest+fname, "w") as f:
         #f.write(stats)
         json.dump(data, f, indent=4, default=str)
-
-################################
+        
 ################################
 ################################
 # main
@@ -332,8 +346,8 @@ def main():
     masterY = np.load("True_NOO_isplanetlist.npy")
     
     # TESTING PURPOSES ONLY
-    #masterX = masterX[::10]
-    #masterY = masterY[::10]
+    #masterX = masterX[::30]
+    #masterY = masterY[::30]
     
     print(f"Length of x-arr: {len(masterX)}\nLength of y-arr: {len(masterY)}")
     
@@ -342,11 +356,11 @@ def main():
     ############################
     
     param_grid = {
-        'n_estimators': [10, 150, 200, 250, 500, 800], 
-        'base_estimator': ['DTC']
+        'window_size': [10, 25, 50, 75, 100],
+        'alphabet_size': [2, 3, 4, 5, 6]
     }
-
     
+
     ############################
     # Loop Start
     ############################
@@ -367,7 +381,7 @@ def main():
     tDelta = tFin - tStart
     mins = (math.floor(tDelta.seconds/60))
     
-    WriteJSON("sktime-CIF", tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, moreStats)
+    WriteJSON("sktime-IndBOSS", tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, moreStats)
 
 ################################
 # EXECUTE ORDER 66
