@@ -3,6 +3,7 @@
     \renewcommand{\arraystretch}{2}
     \renewcommand{\tabcolsep}{20.25pt}
     % Begin Table
+    \vspace{-0.5cm}
     \begin{table}[ht]
     \begin{tabular}{cccc}
      & \multicolumn{3}{c}{Predicted Values} \\ \cline{3-4}
@@ -10,17 +11,18 @@
     \multicolumn{1}{c|}{\multirow{2}{2.0cm}{Actual Values}} & \multicolumn{1}{c|}{\textbf{Not Exoplanet}} & \multicolumn{1}{c|}{158} & \multicolumn{1}{c|}{1571} \\ \cline{2-4}
     \multicolumn{1}{c|}{} & \multicolumn{1}{c|}{\textbf{Exoplanet}} & \multicolumn{1}{c|}{10} & \multicolumn{1}{c|}{277} \\ \cline{2-4}
     \end{tabular}
-    \caption{A Confusion Matrix, showing the comparison between the Actual and Predicted values, and what conclusion they represent. A \emph{True} result implies that the given model correctly predicted the presence, or absence, of a feature from the testing and training data. A \emph{False} result implies that the model incorrectly predicted the presence, or absence, of the feature.}
+    \caption{A Confusion Matrix for the Machine Learning model `sklearn-NB-gauss', showing the comparison between the Actual and Predicted values, and what conclusion they represent. A \emph{True} result implies that the given model correctly predicted the presence, or absence, of a feature from the testing and training data. A \emph{False} result implies that the model incorrectly predicted the presence, or absence, of the feature.}
     \label{tab:sklearn-NB-gaussconfusionmatrix}
     \end{table}
-
-    \label{eq:precisionsklearn-NB-gauss}
+    \vspace{-0.75cm}
+    \label{eq:metrics-sklearn-NB-gauss}
     \begin{align*}
-        Accuracy &= &\frac{TP + TN}{TP + FP + TN + FN} &= &\frac{277 + 158}{277 + 1571 + 158 + 10} &= & 21.5774\% \\
-        Precision &= &\frac{TP}{TP + FP} &= &\frac{277}{277 + 1571} &= & 14.9892\% \\
-        Recall &= &\frac{TP}{TP + FN} &= &\frac{277}{277 + 10} &= & 96.5157\% \\
+        Accuracy &= &\frac{TP + TN}{TP + FP + TN + FN} &= &\frac{277 + 158}{277 + 1571 + 158 + 10} &= & 21.6\% \\
+        Precision &= &\frac{TP}{TP + FP} &= &\frac{277}{277 + 1571} &= & 15.0\% \\
+        Recall &= &\frac{TP}{TP + FN} &= &\frac{277}{277 + 10} &= & 96.5\% \\
+        F1-Score &= &2 \cdot \frac{Precision \cdot Recall}{Precision + Recall} &= &2 \cdot \frac{0.1499 \cdot 0.9652}{0.1499 + 0.9652} &= & 25.9\% \\
     \end{align*}
-
+    \vspace{-1.75cm}
     % End Table
     % Set commands back to normal
     \renewcommand{\arraystretch}{1}

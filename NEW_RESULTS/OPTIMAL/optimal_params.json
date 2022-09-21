@@ -1,0 +1,99 @@
+{
+    "sktime-CBOSS": [
+        {
+            "max_ensemble_size": 50,
+            "n_parameter_samples": 450
+        }
+    ],
+    "sktime-RISE": [
+        {
+            "min_interval": 64,
+            "n_estimators": 250
+        }
+    ],
+    "sklearn-KNN": [
+        {
+            "knn__algorithm": "ball_tree",
+            "knn__n_neighbors": 10,
+            "knn__weights": "uniform"
+        },
+        {
+            "knn__algorithm": "kd_tree",
+            "knn__n_neighbors": 10,
+            "knn__weights": "uniform"
+        },
+        {
+            "knn__algorithm": "brute",
+            "knn__n_neighbors": 10,
+            "knn__weights": "uniform"
+        }
+    ],
+    "sktime-IndividualTDE": [
+        {
+            "alphabet_size": 5,
+            "window_size": 100
+        }
+    ],
+    "sklearn-NB-gauss": [
+        "######## ALL SAME ########"
+    ],
+    "sktime-IndBOSS": [
+        {
+            "alphabet_size": 5,
+            "window_size": 10
+        }
+    ],
+    "sktime-WEASEL": [
+        {
+            "anova": true,
+            "window_inc": 2
+        }
+    ],
+    "sktime-CIF": [
+        {
+            "base_estimator": "DTC",
+            "n_estimators": 150
+        }
+    ],
+    "sktime-KNTS-V2": [
+        {
+            "n_neighbors": 25,
+            "weights": "uniform"
+        },
+        {
+            "n_neighbors": 25,
+            "weights": "distance"
+        }
+    ],
+    "sklearn-RNDTREE": [
+        {
+            "rnd__n_estimators": 100
+        },
+        {
+            "rnd__n_estimators": 1000
+        }
+    ],
+    "sktime-STSF": [
+        {
+            "n_estimators": 250
+        }
+    ],
+    "sktime-DrCIF": [
+        {
+            "base_estimator": "DTC",
+            "n_estimators": 500
+        }
+    ],
+    "sktime-KNTS": [
+        "######## ALL SAME ########"
+    ],
+    "sklearn-SVM": [
+        "######## ALL SAME ########"
+    ],
+    "sktime-MUSE": [
+        {
+            "anova": true,
+            "window_inc": 3
+        }
+    ]
+}

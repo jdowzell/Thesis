@@ -1,0 +1,30 @@
+
+    % Set these to make table look nicer
+    \renewcommand{\arraystretch}{2}
+    \renewcommand{\tabcolsep}{20.25pt}
+    % Begin Table
+    \vspace{-0.5cm}
+    \begin{table}[ht]
+    \begin{tabular}{cccc}
+     & \multicolumn{3}{c}{Predicted Values} \\ \cline{3-4}
+     & \multicolumn{1}{c|}{} & \multicolumn{1}{c|}{\textbf{Not Exoplanet}} & \multicolumn{1}{c|}{\textbf{Exoplanet}} \\ \cline{2-4}
+    \multicolumn{1}{c|}{\multirow{2}{2.0cm}{Actual Values}} & \multicolumn{1}{c|}{\textbf{Not Exoplanet}} & \multicolumn{1}{c|}{1721} & \multicolumn{1}{c|}{8} \\ \cline{2-4}
+    \multicolumn{1}{c|}{} & \multicolumn{1}{c|}{\textbf{Exoplanet}} & \multicolumn{1}{c|}{196} & \multicolumn{1}{c|}{91} \\ \cline{2-4}
+    \end{tabular}
+    \caption{A Confusion Matrix for the Machine Learning model `sktime-DrCIF', showing the comparison between the Actual and Predicted values, and what conclusion they represent. A \emph{True} result implies that the given model correctly predicted the presence, or absence, of a feature from the testing and training data. A \emph{False} result implies that the model incorrectly predicted the presence, or absence, of the feature.}
+    \label{tab:sktime-DrCIFconfusionmatrix}
+    \end{table}
+    \vspace{-0.75cm}
+    \label{eq:metrics-sktime-DrCIF}
+    \begin{align*}
+        Accuracy &= &\frac{TP + TN}{TP + FP + TN + FN} &= &\frac{91 + 1721}{91 + 8 + 1721 + 196} &= & 89.9\% \\
+        Precision &= &\frac{TP}{TP + FP} &= &\frac{91}{91 + 8} &= & 91.9\% \\
+        Recall &= &\frac{TP}{TP + FN} &= &\frac{91}{91 + 196} &= & 31.7\% \\
+        F1-Score &= &2 \cdot \frac{Precision \cdot Recall}{Precision + Recall} &= &2 \cdot \frac{0.9192 \cdot 0.3171}{0.9192 + 0.3171} &= & 47.2\% \\
+    \end{align*}
+    \vspace{-1.75cm}
+    % End Table
+    % Set commands back to normal
+    \renewcommand{\arraystretch}{1}
+    \renewcommand{\tabcolsep}{5.25pt}
+    

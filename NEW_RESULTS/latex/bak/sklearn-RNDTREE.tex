@@ -1,0 +1,28 @@
+
+    % Set these to make table look nicer
+    \renewcommand{\arraystretch}{2}
+    \renewcommand{\tabcolsep}{20.25pt}
+    % Begin Table
+    \begin{table}[ht]
+    \begin{tabular}{cccc}
+     & \multicolumn{3}{c}{Predicted Values} \\ \cline{3-4}
+     & \multicolumn{1}{c|}{} & \multicolumn{1}{c|}{\textbf{Not Exoplanet}} & \multicolumn{1}{c|}{\textbf{Exoplanet}} \\ \cline{2-4}
+    \multicolumn{1}{c|}{\multirow{2}{2.0cm}{Actual Values}} & \multicolumn{1}{c|}{\textbf{Not Exoplanet}} & \multicolumn{1}{c|}{1722} & \multicolumn{1}{c|}{7} \\ \cline{2-4}
+    \multicolumn{1}{c|}{} & \multicolumn{1}{c|}{\textbf{Exoplanet}} & \multicolumn{1}{c|}{224} & \multicolumn{1}{c|}{63} \\ \cline{2-4}
+    \end{tabular}
+    \caption{A Confusion Matrix for the Machine Learning model 'sklearn-RNDTREE', showing the comparison between the Actual and Predicted values, and what conclusion they represent. A \emph{True} result implies that the given model correctly predicted the presence, or absence, of a feature from the testing and training data. A \emph{False} result implies that the model incorrectly predicted the presence, or absence, of the feature.}
+    \label{tab:sklearn-RNDTREEconfusionmatrix}
+    \end{table}
+
+    \label{eq:precisionsklearn-RNDTREE}
+    \begin{align*}
+        Accuracy &= &\frac{TP + TN}{TP + FP + TN + FN} &= &\frac{63 + 1722}{63 + 7 + 1722 + 224} &= & 88.5417\% \\
+        Precision &= &\frac{TP}{TP + FP} &= &\frac{63}{63 + 7} &= & 90.0000\% \\
+        Recall &= &\frac{TP}{TP + FN} &= &\frac{63}{63 + 224} &= & 21.9512\% \\
+    \end{align*}
+
+    % End Table
+    % Set commands back to normal
+    \renewcommand{\arraystretch}{1}
+    \renewcommand{\tabcolsep}{5.25pt}
+    
