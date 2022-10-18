@@ -58,6 +58,13 @@ from scipy.signal import butter,filtfilt
 ################################
 # SKLearn Imports
 ################################
+from sklearn.naive_bayes import GaussianNB
+from sklearn.naive_bayes import MultinomialNB
+from sklearn.naive_bayes import CategoricalNB
+from sklearn.naive_bayes import BernoulliNB     # <------ USE THIS ONE!!! Bernoulli is good for yes/no classification
+                                                # https://towardsdatascience.com/naive-bayes-classifier-81d512f50a7c
+                                                # https://scikit-learn.org/stable/modules/generated/sklearn.naive_bayes.BernoulliNB.html#sklearn.naive_bayes.BernoulliNB
+
 from sklearn import preprocessing
 from sklearn.metrics import confusion_matrix
 from sklearn.metrics import accuracy_score
@@ -76,11 +83,9 @@ from sklearn.preprocessing import MaxAbsScaler
 ################################
 # SKTime Imports
 ################################
-from sktime.datatypes._panel._convert import from_2d_array_to_nested, from_nested_to_2d_array, is_nested_dataframe
+#from sktime.datatypes._panel._convert import from_2d_array_to_nested, from_nested_to_2d_array, is_nested_dataframe
 from sktime.forecasting.compose import TransformedTargetForecaster
 from sktime.forecasting.model_selection import ForecastingGridSearchCV
-
-from sktime.classification.interval_based import DrCIF
 
 ################################
 # Suppress Warnings
@@ -113,6 +118,8 @@ def Every_Nth_Value_EACH(y,nth=40):
 ################################
 
 def Every_Nth_Value(masterX,nth=40):
+    
+    #print("Step 4: Subsample (every nth val)")
     
     biglen = len(masterX)
     oldlen = len(masterX[0])
@@ -176,6 +183,8 @@ def FilterMyData(x,cutoff=0.00005,order=2,xNaNs=xNaNs):
 
 def FilterAllMyData(masterX,cutoff=0.00005,order=2,nanList=xNaNs):
     
+    #print("Step 3: Filter")
+    
     # Input:  masterX
     # Output: masterX with each LC filtered
     
@@ -188,6 +197,8 @@ def FilterAllMyData(masterX,cutoff=0.00005,order=2,nanList=xNaNs):
 
 def Normal(masterX):
     
+    #print("Step 2: Normalise")
+    
     # Takes in 'masterX', my 9154 long array of LCs.
     # Need to return a 9154 array, where the daya has been normalised for EACH LC
     for X in masterX:
@@ -199,6 +210,8 @@ def Normal(masterX):
 ################################
 
 def FIXNAN(masterX, nanList=xNaNs):
+    
+    #print("Step 1: Fix NaN")
     
     # Takes in 'masterX', my 9154 long array of LCs.
     # Need to return a 9154 array, where the daya has been normalised for EACH LC
@@ -224,8 +237,11 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     # Make a PCA Pipeline
     print("> START")
     
-    algorithm = DrCIF(n_jobs=-1)
-    print(f"\t> Model: {algorithm}")
+    algorithm = BernoulliNB()
+    #algorithm = CategoricalNB()
+    #algorithm = GaussianNB()
+
+    print("\t> Model: Bernoulli Naive-Bayes")
     
     # Make the transformers
     print("> GENERATING TRANSFORMERS")
@@ -233,29 +249,35 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     norm = FunctionTransformer(Normal)
     filt = FunctionTransformer(FilterAllMyData)
     enth = FunctionTransformer(Every_Nth_Value)
-    mnst = FunctionTransformer(MakeNested)
+    lcsc = FunctionTransformer(LCScaler)
+    #mnst = FunctionTransformer(MakeNested)
     
     # Construct the Pipeline
     print("> MAKE PIPELINE")
-    pipe = Pipeline(steps=[['fixnan',fnan],['normalise',norm],['filter',filt]], verbose=True) #,['everynth',enth],['nb', algorithm]])
+    #model = make_pipeline(flt,nth,algorithm)
+    #pipe = Pipeline(steps=[['fixnan',fnan],['normalise',norm],['filter',filt],['everynth',enth],['makenested', mnst],['drcif', DrCIF(n_jobs=-1)]])
+    #pipe = Pipeline(steps=[['fixnan',fnan],['normalise',norm],['filter',filt],['everynth',enth],['nb', algorithm]])
+    pipe = Pipeline(steps=[['fixnan',fnan],['normalise',norm], ['scale', lcsc],['filter',filt]])
+    #print(pipe)
     
-    print("> INITIAL TRANSFORMATION")
-    pipe.transform(X_arr)
+    #print("> INITIAL TRANSFORMATION")
+    #pipe.transform(X_arr)
+    
+    print("> LOADING ARRAYS")
+    X_arr = np.load("NOO_TRANSFORMED_DATA.npy")
     
     print("> PERFORM SUBSAMPLING")
     X_arr = enth.transform(X_arr)
     
-    print("> MAKE NESTED")
-    X_nested = mnst.transform(X_arr)
-    
     # Perform data manipulation
     print("> TEST-TRAIN-SPLIT")
     #nestedX = MakeNested(X_arr)
-    X_train, X_test, y_train, y_test = train_test_split(X_nested, Y_arr, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X_arr, Y_arr, random_state=42)
     
     # Do gridsearch for svc params
     print("> GRIDSEARCH")
-    grid = GridSearchCV(algorithm, param_grid, return_train_score=True, n_jobs=-1)
+    #grid = GridSearchCV(pipe, param_grid, return_train_score=True, n_jobs=3) # 4 programs running at once, 3 jobs = 12 CPUs, 3 for current, 1 spare - 16 total
+    grid = GridSearchCV(algorithm, param_grid, return_train_score=True, n_jobs=3) # 4 programs running at once, 3 jobs = 12 CPUs, 3 for current, 1 spare - 16 total
     
     # Fit model
     print("> FIT")
@@ -271,6 +293,10 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     print("> PREDICT")
     model = grid.best_estimator_
     y_pred = model.predict(X_test)
+    
+    # Get Model Data
+    print("> MODEL")
+    print(model)
     
     # Get Acc/Pre/Res
     print("> CALCULATING RELIABILITY METRICS")
@@ -321,6 +347,27 @@ def WriteJSON(targetname, tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, s
         json.dump(data, f, indent=4, default=str)
         
 ################################
+
+def LCScaler(masterX):
+    # Gen idlist
+    idlist=[]
+    for idx,LC in enumerate(masterX):
+        if min(LC) < 0:
+            idlist.append(idx)
+    
+    for lc in idlist:
+        #lc is now an iterator
+        #for lc in [5785, 5994, 6117, 7769]
+        
+        LC = masterX[lc]
+        
+        #Min = min()
+        tmp = np.array([(x - min(LC)) / (max(LC) - min(LC)) for x in LC])
+        masterX[lc] = tmp
+    return masterX    
+
+################################
+
 ################################
 # main
 ################################
@@ -339,13 +386,13 @@ def main():
     
     print(f"Length of x-arr: {len(masterX)}\nLength of y-arr: {len(masterY)}")
 
+    
     ############################
     # Parameter Grid Setup
     ############################
     
     param_grid = {
-        'n_estimators': [10, 150, 200, 250, 500, 800],
-        'base_estimator': ['DTC']
+        'alpha': np.linspace(0.001,0,1000,False)[::-1]
     }
     
 
@@ -366,7 +413,7 @@ def main():
     tDelta = tFin - tStart
     mins = (math.floor(tDelta.seconds/60))
     
-    WriteJSON("sktime-DrCIF", tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, moreStats)
+    WriteJSON("sklearn-NB-bernoulli-new", tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, moreStats)
 
 ################################
 # EXECUTE ORDER 66

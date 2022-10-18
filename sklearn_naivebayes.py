@@ -272,8 +272,8 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     print("> PERFORM SUBSAMPLING")
     X_arr = enth.transform(X_arr)
     
-    print("> CATEGORY CHANGING")
-    Y_arr = np.array(["True" if x==1 else "False" for x in Y_arr])
+    #print("> CATEGORY CHANGING")
+    #Y_arr = np.array(["True" if x==1 else "False" for x in Y_arr])
     
     # Perform data manipulation
     print("> TEST-TRAIN-SPLIT")
@@ -292,8 +292,8 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     # Use svc params and predict
     print("> MAKESTATS")
     moreStats = grid.cv_results_
-    #print("> > Best parameter (CV score=%0.3f):" % grid.best_score_)
-    #print("> > {}".format(grid.best_params_))
+    print("> > Best parameter (CV score=%0.3f):" % grid.best_score_)
+    print("> > {}".format(grid.best_params_))
     
     # Use svc params and predict
     print("> PREDICT")
@@ -397,10 +397,10 @@ def main():
     # Parameter Grid Setup
     ############################
     
-    param_grid = {'var_smoothing': np.linspace(1e-09,1e-08,91,True)
-                    #'alpha': np.linspace(0,1,101,True)[1:]#, #[0.0, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1],
-                    }
-                  #'fit_prior': [True, False]}
+    n = 1e-03
+    m = 1e-01
+    
+    param_grid = {'var_smoothing': np.linspace(min(1/n,1/m),max(1/n,1/m),int(1/min(n,m)),True)}
     
 
     ############################

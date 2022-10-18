@@ -245,6 +245,13 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     print("> PERFORM SUBSAMPLING")
     X_arr = enth.transform(X_arr)
     
+    #print("> LOAD TRANSFORMED DATA")
+    #X = np.load("NOO_TRANSFORMED_DATA.npy")
+    #X = np.array(X, dtype=np.double)
+    
+    #print("> CHECK KEYS")
+    #print(algorithm.get_params().keys())
+    
     print("> MAKE NESTED")
     X_nested = mnst.transform(X_arr)
     
@@ -332,8 +339,8 @@ def main():
     masterY = np.load("True_NOO_isplanetlist.npy")
     
     # TESTING PURPOSES ONLY
-    #masterX = masterX[::10]
-    #masterY = masterY[::10]
+    masterX = masterX[::20]
+    masterY = masterY[::20]
     
     print(f"Length of x-arr: {len(masterX)}\nLength of y-arr: {len(masterY)}")
     
@@ -342,7 +349,8 @@ def main():
     ############################
     
     param_grid = {
-        'distance': ['dtw','ddtw', 'wdtw','lcss','erp','msm','twe']
+        #'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute']
+        'distance': ['ddtw', 'wdtw','lcss','erp','msm','twe']
     }
     
     ############################

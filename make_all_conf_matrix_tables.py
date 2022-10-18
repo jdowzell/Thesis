@@ -3,7 +3,7 @@
 ################################
 # General imports
 ################################
-import csv, math, io, os, os.path, sys, random, time, json, re
+import csv, math, io, os, os.path, sys, random, time, json, re, sigfig
 import pandas as pd
 
 ################################
@@ -13,7 +13,9 @@ import pandas as pd
 def GetJSONFile(f):
     with open(f) as jf:
         jsonfile = json.load(jf)
-    return(jsonfile)
+        algoname = list(jsonfile.keys())[0]
+        print(f"FILE = {f}; ALGORITHM = {algoname}")
+    return(jsonfile, algoname)
 
 ################################
 
@@ -37,7 +39,7 @@ def GetReliabilityMetrics(data,cols):
 def OutputText(file, fname, dest):
 
     # Load and Parse the JSON file       
-    jsondata = GetJSONFile(file)
+    jsondata, algoname = GetJSONFile(file)
 
     # Get the Keys
     keylist = []
@@ -64,12 +66,15 @@ def OutputText(file, fname, dest):
 
     # Get The Metrics
     (TN,FP,FN,TP,a,p,r) = GetReliabilityMetrics(jsondatalist, columnList)
+    
+    Fscore = 2*((p*r)/(p+r))
 
     defaultText = r"""
     % Set these to make table look nicer
     \renewcommand{\arraystretch}{2}
     \renewcommand{\tabcolsep}{20.25pt}
     % Begin Table
+    \vspace{-0.5cm}
     \begin{table}[ht]
     \begin{tabular}{cccc}
      & \multicolumn{3}{c}{Predicted Values} \\ \cline{3-4}
@@ -77,31 +82,53 @@ def OutputText(file, fname, dest):
     \multicolumn{1}{c|}{\multirow{2}{2.0cm}{Actual Values}} & \multicolumn{1}{c|}{\textbf{Not Exoplanet}} & \multicolumn{1}{c|}{True Negative} & \multicolumn{1}{c|}{False Positive} \\ \cline{2-4}
     \multicolumn{1}{c|}{} & \multicolumn{1}{c|}{\textbf{Exoplanet}} & \multicolumn{1}{c|}{False Negative} & \multicolumn{1}{c|}{True Positive} \\ \cline{2-4}
     \end{tabular}
-    \caption{A Confusion Matrix, showing the comparison between the Actual and Predicted values, and what conclusion they represent. A \emph{True} result implies that the given model correctly predicted the presence, or absence, of a feature from the testing and training data. A \emph{False} result implies that the model incorrectly predicted the presence, or absence, of the feature.}
+    \caption{A Confusion Matrix for the Machine Learning model `MODELNAME', showing the comparison between the Actual and Predicted values, and what conclusion they represent. A \emph{True} result implies that the given model correctly predicted the presence, or absence, of a feature from the testing and training data. A \emph{False} result implies that the model incorrectly predicted the presence, or absence, of the feature.}
     \label{tab:XXXconfusionmatrix}
     \end{table}
-
-    \label{eq:precisionXXX}
+    \vspace{-0.75cm}
+    \label{eq:metrics-XXX}
     \begin{align*}
         Accuracy &= &\frac{TP + TN}{TP + FP + TN + FN} &= &\frac{True Positive + True Negative}{True Positive + False Positive + True Negative + False Negative} &= & ACCURACY
         Precision &= &\frac{TP}{TP + FP} &= &\frac{True Positive}{True Positive + False Positive} &= & PRECISION
         Recall &= &\frac{TP}{TP + FN} &= &\frac{True Positive}{True Positive + False Negative} &= & RECALL
+        F1-Score &= &2 \cdot \frac{Precision \cdot Recall}{Precision + Recall} &= &2 \cdot \frac{fPRE \cdot fREC}{fPRE + fREC} &= & FSCORE
     \end{align*}
-
+    \vspace{-1.75cm}
     % End Table
     % Set commands back to normal
     \renewcommand{\arraystretch}{1}
     \renewcommand{\tabcolsep}{5.25pt}
     """
 
+    defaultText = re.sub("MODELNAME",  str(algoname), defaultText)
+    
     defaultText = re.sub("True Negative",  str(TN), defaultText)
     defaultText = re.sub("True Positive",  str(TP), defaultText)
     defaultText = re.sub("False Negative", str(FN), defaultText)
     defaultText = re.sub("False Positive", str(FP), defaultText)
 
-    defaultText = re.sub("ACCURACY" , "{:.4%} \\\\\\\\".format(a), defaultText)
-    defaultText = re.sub("PRECISION", "{:.4%} \\\\\\\\".format(p), defaultText)
-    defaultText = re.sub("RECALL"   , "{:.4%} \\\\\\\\".format(r), defaultText)
+#    defaultText = re.sub("ACCURACY" , "{:.3%} \\\\\\\\".format(a), defaultText)
+#    defaultText = re.sub("PRECISION", "{:.3%} \\\\\\\\".format(p), defaultText)
+#    defaultText = re.sub("RECALL"   , "{:.3%} \\\\\\\\".format(r), defaultText)
+
+    # Fixing NaNs
+    
+    if math.isnan(p):
+        print(f"{algoname} (p) HAS A NAN!")
+        p = 0.00000
+        
+    if math.isnan(Fscore):
+        print(f"{algoname} (Fscore) HAS A NAN!")
+        Fscore = 0.00000
+
+    defaultText = re.sub("ACCURACY" , "{:.3}% \\\\\\\\".format(sigfig.round(a, sigfigs=3)*100), defaultText)
+    defaultText = re.sub("PRECISION", "{:.3}% \\\\\\\\".format(sigfig.round(p, sigfigs=3)*100), defaultText)
+    defaultText = re.sub("RECALL"   , "{:.3}% \\\\\\\\".format(sigfig.round(r, sigfigs=3)*100), defaultText)
+    
+    defaultText = re.sub("fPRE", "{:.4}".format(p), defaultText)
+    defaultText = re.sub("fREC", "{:.4}".format(r), defaultText)
+    
+    defaultText = re.sub("FSCORE", "{:.3}% \\\\\\\\".format(sigfig.round(Fscore, sigfigs=3)*100), defaultText)
 
     defaultText = re.sub("XXX", str(fname)[:-5], defaultText)
     defaultText = re.sub("\% \\\\", "\\\% \\\\", defaultText)

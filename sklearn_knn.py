@@ -222,13 +222,11 @@ def MakeNested(masterX):
 
 def GetMetrics(X_arr, Y_arr, param_grid):
     
-    # Make a PCA Pipeline
+     # Make a PCA Pipeline
     print("> START")
     
-    #algorithm = SVC(kernel='rbf', class_weight='balanced')
-    algorithm = KNeighborsClassifier()
-
-    print("\t> Model: k-Nearest Neighbour")
+    algorithm = KNeighborsClassifier(n_jobs=-1)
+    print(f"\t> Model: {algorithm}")
     
     # Make the transformers
     print("> GENERATING TRANSFORMERS")
@@ -236,20 +234,16 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     norm = FunctionTransformer(Normal)
     filt = FunctionTransformer(FilterAllMyData)
     enth = FunctionTransformer(Every_Nth_Value)
-    #mnst = FunctionTransformer(MakeNested)
     
     # Construct the Pipeline
     print("> MAKE PIPELINE")
-    #model = make_pipeline(flt,nth,algorithm)
-    #pipe = Pipeline(steps=[['fixnan',fnan],['normalise',norm],['filter',filt],['everynth',enth],['makenested', mnst],['drcif', DrCIF(n_jobs=-1)]])
-    pipe = Pipeline(steps=[['fixnan',fnan],['normalise',norm],['filter',filt],['everynth',enth],['knn', algorithm]])
-    #print(pipe)
+    pipe = Pipeline(steps=[['fixnan',fnan],['normalise',norm],['filter',filt]], verbose=True)
     
-    #print("> INITIAL TRANSFORMATION")
-    #pipe.transform(X_arr)
+    print("> INITIAL TRANSFORMATION")
+    pipe.transform(X_arr)
     
-    #print("> SAVING ARRAYS")
-    #np.save("NOO_TRANSFORMED_DATA",X_arr)
+    print("> PERFORM SUBSAMPLING")
+    X_arr = enth.transform(X_arr)
     
     print("> LOADING ARRAYS")
     X_arr = np.load("NOO_TRANSFORMED_DATA.npy")
@@ -265,7 +259,7 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     # Do gridsearch for svc params
     print("> GRIDSEARCH")
     #grid = GridSearchCV(pipe, param_grid, return_train_score=True, n_jobs=3) # 4 programs running at once, 3 jobs = 12 CPUs, 3 for current, 1 spare - 16 total
-    grid = GridSearchCV(algorithm, param_grid, return_train_score=True, n_jobs=3) # 4 programs running at once, 3 jobs = 12 CPUs, 3 for current, 1 spare - 16 total
+    grid = GridSearchCV(algorithm, param_grid, return_train_score=True, n_jobs=-1) # 4 programs running at once, 3 jobs = 12 CPUs, 3 for current, 1 spare - 16 total
     
     # Fit model
     print("> FIT")
@@ -280,6 +274,9 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     # Use svc params and predict
     print("> PREDICT")
     model = grid.best_estimator_
+    
+    print(model)
+    
     y_pred = model.predict(X_test)
     
     # Get Acc/Pre/Res
@@ -353,8 +350,10 @@ def main():
     # Parameter Grid Setup
     ############################
     
-    param_grid = {'algorithm': ['ball_tree', 'kd_tree', 'brute'],
-                  'n_neighbors': [5, 10, 15, 20, 25],     # ~500 datapoints after filtering, so let's go to say 5% of total neighbours - ie, 25
+    param_grid = {#'algorithm': ['ball_tree', 'kd_tree', 'brute'],
+                  #'n_neighbors': [5, 10, 15, 20, 25, ],     # ~500 datapoints after filtering, so let's go to say 5% of total neighbours - ie, 25
+                  #'weights': ['uniform', 'distance']
+                  'n_neighbors': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20],
                   'weights': ['uniform', 'distance']
                  }
     

@@ -210,16 +210,13 @@ def MakeNested(masterX):
 
 ################################
 
-def GetMetrics(X_arr, Y_arr):
-#def GetMetrics(classifier, X_arr, Y_arr):
-    #NOT NEEDED AS NO PARAMS TO GRID:     #,param_grid):
+def GetMetrics(X_arr, Y_arr, param_grid):
     
-    # Make a Pipeline
+    # Make a PCA Pipeline
     print("> START")
-    algorithm = SupervisedTimeSeriesForest(n_jobs = -1)
-    cname     = SupervisedTimeSeriesForest.__name__
-    pipecname = cname.lower()
-    print(f"\t> Model: {cname}")
+    
+    algorithm = SupervisedTimeSeriesForest(n_jobs=-1)
+    print(f"\t> Model: {algorithm}")
     
     # Make the transformers
     print("> GENERATING TRANSFORMERS")
@@ -231,40 +228,51 @@ def GetMetrics(X_arr, Y_arr):
     
     # Construct the Pipeline
     print("> MAKE PIPELINE")
-    #model = make_pipeline(flt,nth,algorithm)
+    pipe = Pipeline(steps=[['fixnan',fnan],['normalise',norm],['filter',filt]], verbose=True) #,['everynth',enth],['nb', algorithm]])
     
-    pipe = Pipeline(steps=[['fixnan',fnan],['normalise',norm],['filter',filt],['everynth',enth],['makenested', mnst],['algo', algorithm]])
-    #print(pipe)
+    print("> INITIAL TRANSFORMATION")
+    pipe.transform(X_arr)
     
-    #print("> SET N_JOBS")
-    #pipe.set_params(algo__n_jobs = -1)
+    print("> PERFORM SUBSAMPLING")
+    X_arr = enth.transform(X_arr)
+    
+    print("> MAKE NESTED")
+    X_nested = mnst.transform(X_arr)
     
     # Perform data manipulation
     print("> TEST-TRAIN-SPLIT")
     #nestedX = MakeNested(X_arr)
-    X_train, X_test, y_train, y_test = train_test_split(X_arr, Y_arr, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X_nested, Y_arr, random_state=42)
     
-    # Perform data manipulation
+    # Do gridsearch for svc params
+    print("> GRIDSEARCH")
+    grid = GridSearchCV(algorithm, param_grid, return_train_score=True, n_jobs=-1)
+    
+    # Fit model
     print("> FIT")
-    pipe.fit(X_train, y_train)
-    #fitpipe = Parallel(n_jobs=7)(delayed(pipe.fit)(X_train, y_train)) # for c in list_of_classifiers)
+    grid.fit(X_train, y_train)
     
+    # Use svc params and predict
+    print("> MAKESTATS")
+    moreStats = grid.cv_results_
+    
+    # Use svc params and predict
     print("> PREDICT")
-    y_pred = fitpipe.predict(X_test)
+    model = grid.best_estimator_
+    y_pred = model.predict(X_test)
     
     # Get Acc/Pre/Res
     print("> CALCULATING RELIABILITY METRICS")
     mAcc = accuracy_score(y_test, y_pred)
     mPre = precision_score(y_test, y_pred)
     mRec = recall_score(y_test, y_pred)
-    #metrics = (mAcc, mPre, mRec)
     
     # Now that model has done, time for confusion matrix shenanigans
     print("> CONFUSION")
     mat = confusion_matrix(y_test, y_pred)
     
-    print(f"Y_TEST = {y_test}\n"
-          f"Y_PRED = {y_pred}")
+    #print(f"Y_TEST = {y_test}\n"
+    #      f"Y_PRED = {y_pred}")
     
     return (mat, moreStats, mAcc, mPre, mRec)
 
@@ -309,57 +317,44 @@ def WriteJSON(algorithm, tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, st
 ################################
 
 def main():
+    
     ############################
     # Data Initialisers
     ############################
-    masterX = [x[1:-1] for x in np.load("None_Or_One_Exoplanet.npy")] # <--- x[1:-1] because this trims off the leading/trailing 0 present on every LC
-    masterY = np.load("None_Or_One_isplanetlist.npy")
-
+    masterX = np.load("True_NOO_fluxes.npy")
+    masterY = np.load("True_NOO_isplanetlist.npy")
+    
+    # TESTING PURPOSES ONLY
+    #masterX = masterX[::10]
+    #masterY = masterY[::10]
+    
     print(f"Length of x-arr: {len(masterX)}\nLength of y-arr: {len(masterY)}")
-
+    
     ############################
-    # Classifier List Setup
+    # Parameter Grid Setup
     ############################
-
-    list_of_classifiers = [SupervisedTimeSeriesForest]
-    classifier = list_of_classifiers[0]
-
-    cname = classifier.__name__
-    print(f"Model: {cname}")
-
-    #quit = input("Press 'q' To Quit, Or Any Other Key To Continue...\n")
-    #if quit.lower() == 'q':
-    #    return
-
+    
+    param_grid = {
+        'n_estimators': [50, 200, 250, 300, 800]
+    }
+    
     ############################
     # Loop Start
     ############################
 
-    print("Staring Loops!\n####################\n")
-
-    cname = classifier.__name__
-    print(f"Model: {cname}")
-
-    # Parameter Grid
-    #param_grid = full_param_grid[cname]
-
-    # Start Timer
     tStart = datetime.now()
-
-    # Confusion Matric Stuff
+    print(f"Staring Loops!\n####################\nStart Time: {tStart}\n####################\n")
     
-    #p =  multiprocessing.Process(target= GetMetrics, args = [classifier, masterX, masterY])
-    #p.start()
-    #confMat, moreStats, acc, pre, rec = zip(*p)
+    #Parallel(n_jobs=-1)(delayed(DoTheStuff)(classifier, param_grid, masterX, masterY) for classifier in list_of_classifiers)
+    confMat, moreStats, acc, pre, rec = GetMetrics(masterX, masterY, param_grid)
     
-    confMat, moreStats, acc, pre, rec = GetMetrics(masterX, masterY)
-    #confMat, moreStats, acc, pre, rec = GetMetrics(classifier, masterX, masterY)
-    #confMat, moreStats, acc, pre, rec = zip(*Parallel(n_jobs=7)(delayed(GetMetrics)(c, masterX, masterY) for c in list_of_classifiers))
-
     ((TN, FN), (FP, TP)) = confMat.T
-
+    
     # End Timer and get time stats
     tFin = datetime.now()
+    
+    print(f"\n####################\nFinish Time: {tFin}\n####################\n")
+    
     tDelta = tFin - tStart
     mins = (math.floor(tDelta.seconds/60))
 

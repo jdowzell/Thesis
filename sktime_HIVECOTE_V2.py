@@ -80,7 +80,8 @@ from sktime.datatypes._panel._convert import from_2d_array_to_nested, from_neste
 from sktime.forecasting.compose import TransformedTargetForecaster
 from sktime.forecasting.model_selection import ForecastingGridSearchCV
 
-from sktime.classification.interval_based import DrCIF
+from sktime.classification.hybrid import HIVECOTEV2
+from sktime.contrib.vector_classifiers._rotation_forest import RotationForest
 
 ################################
 # Suppress Warnings
@@ -224,7 +225,7 @@ def GetMetrics(X_arr, Y_arr, param_grid):
     # Make a PCA Pipeline
     print("> START")
     
-    algorithm = DrCIF(n_jobs=-1)
+    algorithm = HIVECOTEV2(n_jobs=-1,)
     print(f"\t> Model: {algorithm}")
     
     # Make the transformers
@@ -334,27 +335,73 @@ def main():
     masterY = np.load("True_NOO_isplanetlist.npy")
     
     # TESTING PURPOSES ONLY
-    #masterX = masterX[::30]
-    #masterY = masterY[::30]
+    masterX = masterX[::30]
+    masterY = masterY[::30]
     
     print(f"Length of x-arr: {len(masterX)}\nLength of y-arr: {len(masterY)}")
-
+    
     ############################
     # Parameter Grid Setup
     ############################
     
-    param_grid = {
-        'n_estimators': [10, 150, 200, 250, 500, 800],
-        'base_estimator': ['DTC']
-    }
+    # param_grid = {
+    #     stc_params: [
+    #         "estimator": [RotationForest(n_estimators=3)],
+    #         "n_shapelet_samples": [500, 1000, 1500],
+    #         "max_shapelets": [50, 100, 150],
+    #         "batch_size": [500, 1000, 1500],
+    #     ],
+    #     drcif_params: [
+    #         'n_estimators': [10, 150, 500, 800],
+    #         'base_estimator': ['DTC']
+    #     ],
+    #     arsenal_params: [
+    #         'num_kernels': [1000, 2000, 3000],
+    #         'n_estimators': [15, 20, 25, 30, 35]
+    #     ],
+    #     tde_params: [
+    #         "n_parameter_samples": [100, 150, 200],
+    #         "max_ensemble_size": [500, 1000, 1500],
+    #         "randomly_selected_params": [50, 100, 150],
+    #     ]
+    # }
     
+    stc_params={
+        "n_shapelet_samples": 100,
+        "max_shapelets": 10,
+        "batch_size": 20,
+    }
+    drcif_params={
+        "n_estimators": 2,
+        "n_intervals": 2,
+        "att_subsample_size": 2
+    }
+    arsenal_params={
+        "num_kernels": 50,
+        "n_estimators": 3
+    }
+    tde_params={
+        "n_parameter_samples": 10,
+        "max_ensemble_size": 3,
+        "randomly_selected_params": 5,
+    }
 
+    param_grid = {
+        'stc_params':     list(stc_params.items()),
+        'drcif_params':   list(drcif_params.items()),
+        'arsenal_params': list(arsenal_params.items()),
+        'tde_params':     list(tde_params.items())
+    }
+
+    param_grid = np.array(list(param_grid.items()), dtype=object)
+    
+    
     ############################
     # Loop Start
     ############################
     
-    print("Staring Loops!\n####################\n")
     tStart = datetime.now()
+    print(f"Staring Loops!\n####################\nStart Time: {tStart}\n####################\n")
     
     #Parallel(n_jobs=-1)(delayed(DoTheStuff)(classifier, param_grid, masterX, masterY) for classifier in list_of_classifiers)
     confMat, moreStats, acc, pre, rec = GetMetrics(masterX, masterY, param_grid)
@@ -363,10 +410,13 @@ def main():
     
     # End Timer and get time stats
     tFin = datetime.now()
+    
+    print(f"\n####################\nFinish Time: {tFin}\n####################\n")
+    
     tDelta = tFin - tStart
     mins = (math.floor(tDelta.seconds/60))
     
-    WriteJSON("sktime-DrCIF", tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, moreStats)
+    WriteJSON("sktime-HIVECOTEV1", tStart, tFin, tDelta, TN, FP, FN, TP, acc, pre, rec, moreStats)
 
 ################################
 # EXECUTE ORDER 66
