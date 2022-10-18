@@ -7,3 +7,9 @@ FITSLIST.txt
 FLUXLIST.txt
 IDLIST.txt
 ISPLANETLIST.txt
+*.npy
+*.fits
+img/lcs/
+img/bak/
+Data/
+_BAK/
